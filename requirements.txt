@@ -1,0 +1,7 @@
+# Dependencies
+hid-tools
+connexion
+
+# Test dependencies
+pytest
+libevdev

@@ -1,0 +1,21 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: archlinux/base
+
+    working_directory: ~/repo
+
+    steps:
+      - run:
+          name: Install dependencies and prepare the system
+          command: |
+            pacman -Syu --noconfirm --noprogressbar hid-tools python-connexion python-pytest python-libevdev git tar
+      - checkout
+      - run:
+          name: Run tests
+          command: |
+            . venv/bin/activate
+            src/main.py &
+            sleep 1
+            pytest tests/
