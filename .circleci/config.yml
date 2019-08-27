@@ -8,14 +8,22 @@ jobs:
 
     steps:
       - run:
+          name: Install tar
+          command: pacman -Sy --noconfirm --noprogressbar tar
+      - restore_cache:
+          keys:
+            - pacman
+      - run:
           name: Install dependencies and prepare the system
-          command: |
-            pacman -Syu --noconfirm --noprogressbar hid-tools python-connexion python-pytest python-libevdev git tar
+          command: pacman -Syu --noconfirm --noprogressbar hid-tools python-connexion python-pytest python-libevdev git
+      - save_cache:
+          key: pacman
+          paths:
+            - /var/cache/pacman/pkg
       - checkout
       - run:
           name: Run tests
           command: |
-            . venv/bin/activate
             src/main.py &
             sleep 1
             pytest tests/
