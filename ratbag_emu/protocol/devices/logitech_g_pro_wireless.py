@@ -132,7 +132,7 @@ class LogitechGProWirelessDevice(HIDPP20Device):
         self.feature_table = [
             HIDPP20Features.IRoot,
             HIDPP20Features.IFeatureSet,
-            HIDPP20Features.IFeatureInfo,
+            HIDPP20Features.DeviceInformation,
             HIDPP20Features.DeviceNameAndType,
             0x1d4b,
             0x0020,
