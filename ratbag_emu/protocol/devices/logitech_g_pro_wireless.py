@@ -151,4 +151,6 @@ class LogitechGProWirelessDevice(HIDPP20Device):
             # TODO: Some features missing, we need a better way to extract them
         }
 
+        self.entities = []
+
         super().__init__()

@@ -2,6 +2,8 @@
 
 import logging
 
+from collections import namedtuple
+
 from .base import BaseDevice
 from ratbag_emu.util import pack_be_u16, unpack_be_u16
 
@@ -49,6 +51,10 @@ class HIDPP20Errors():
     INVALID_FUNCTION_ID = 7
     Busy = 8
     Unsupported = 9
+
+
+HIDPP20Entity = namedtuple('HIDPP20Entity', ['type', 'fwName', 'revision',
+                           'build', 'active', 'trPid', 'extraVer'])
 
 
 class HIDPP20Device(BaseDevice):
@@ -124,7 +130,7 @@ class HIDPP20Device(BaseDevice):
     #
     def protocol_receive(self, data, size, rtype):
         report_type = data[self.Report.ReportType]
-        feature = data[self.Report.Feature]
+        feature = self.feature_table[data[self.Report.Feature]]
         ase = data[self.Report.ASE] >> 4
         args = data[self.Report.Arguments:]
 
@@ -167,20 +173,20 @@ class HIDPP20Device(BaseDevice):
         # count = getCount()
         if ase == 0:
             logger.debug(f'getCount() = {len(self.feature_table)}')
-            self.protocol_reply(data, [len(self.feature_table)])
+            self.protocol_reply(data, [len(self.feature_table) - 1])
 
         # featureID, featureType, featureVersion = getFeatureID(featureIndex)
         elif ase == 1:
             featureIndex = args[0]
 
             if featureIndex >= len(self.feature_table):
+                logger.debug(f'getFeatureID({featureIndex}) = ERR_OUT_OF_RANGE')
                 self.protocol_error(data, self.Errors.OutOfRange)
                 return
 
-            logger.debug(f'getFeatureID({featureIndex}) = {self.feature_table[featureIndex]}')
-            # we won't support any hidden features and we are also not planning
-            # to support obsolete features ATM so we will set featType to 0
-            self.protocol_reply(data, [self.feature_table[featureIndex], 0, 0])
+            featId = self.feature_table[featureIndex]
+            logger.debug(f'getFeatureID({featureIndex}) = {featId:04x}')
+            self.protocol_reply(data, pack_be_u16(featId) + [0, self.feature_version.get(featId, 0)])
 
     def IFeatureInfo(self, data, ase, args):
         return
