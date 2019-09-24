@@ -142,23 +142,7 @@ class LogitechGProWirelessDevice(HIDPP20Device):
             0x8100,
             0x8110,
             0x8060,
-            0x2201,
-            0x1802,
-            0x1803,
-            0x1805,
-            0x1806,
-            0x1811,
-            0x1830,
-            0x1890,
-            0x1891,
-            0x18a1,
-            0x1801,
-            0x18b1,
-            0x1df3,
-            0x1e00,
-            0x1eb0,
-            0x1863,
-            0x1e22
+            0x2201
         ]
 
         super().__init__()
