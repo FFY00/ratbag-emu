@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
+import random
 
 from collections import namedtuple
 
@@ -81,7 +82,8 @@ class HIDPP20Device(BaseDevice):
         self.features = {
             self.Features.IRoot: self.IRoot,
             self.Features.IFeatureSet: self.IFeatureSet,
-            self.Features.IFeatureInfo: self.IFeatureInfo
+            self.Features.IFeatureInfo: self.IFeatureInfo,
+            self.Features.DeviceInformation: self.DeviceInformation
         }
 
         self.events = {}
@@ -190,3 +192,50 @@ class HIDPP20Device(BaseDevice):
 
     def IFeatureInfo(self, data, ase, args):
         return
+
+    def DeviceInformation(self, data, ase, args):
+        # entityCnt, unitId, transport, modelId, extendedModelId = getDeviceInfo()
+        if ase == 0:
+            reply = [
+                # entityCnt
+                len(self.entities),
+                # unitId
+                0xAA,
+                0xBB,
+                # transport
+                0x00,
+                0x06,  # USB/eQUAD
+                # modelId (FIXME: Add modelId value)
+                0x00,
+                0x00,
+                # extendedModelId (should not matter, we will keep it at 0)
+                0x00,
+            ]
+            logger.debug(f'FIXME: add modelId')
+            logger.debug(f'getDeviceInfo() = (entityCnt) {reply[0]}, (unitId) {pack_be_u16(reply[1], reply[2])}, '
+                '(transport) USB/eQUAD, (modelId) {pack_be_u16(reply[5], reply[6])}, (extendedModelId) {reply[7]}')
+            self.protocol_reply(data, reply)
+
+        # type, fwName, rev, build, active, trPid, extraVer = getFwInfo(entityIdx)
+        elif ase == 1:
+            entityIdx = args[0]
+
+            if entityIdx >= len(self.entities):
+                logger.debug(f'getFwInfo({entityIdx}) = ERR_OUT_OF_RANGE')
+                self.protocol_error(data, self.Errors.OutOfRange)
+                return
+
+            entity = self.entities[entityIdx]
+
+            reply = [entity.type]
+            reply += [char for char in entity.fwName[:3]]
+            reply += [int(entity.fwName[3:])]
+            reply += [entity.revision]
+            reply += pack_be_u16(entity.build)
+            reply += [entity.active]
+            reply += pack_be_u16(entity.trPid)
+            reply += [entity.extraVer[0]]
+            reply += [entity.extraVer[5]]
+
+            logger.debug(f'getFwInfo({entityIdx}) = {entity}')
+            self.protocol_reply(data, reply)
