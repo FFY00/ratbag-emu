@@ -3,6 +3,7 @@
 import logging
 
 from .base import BaseDevice
+from ratbag_emu.util import pack_be_u16, unpack_be_u16
 
 logger = logging.getLogger('ratbagemu.protocol.hidpp20')
 
@@ -51,7 +52,8 @@ class HIDPP20Errors():
 
 
 class HIDPP20Device(BaseDevice):
-    # Internal variables
+    feature_table = {}
+    feature_version = {}
 
     def __init__(self):
         assert hasattr(self, 'feature_table'), 'Feature table missing'
@@ -149,19 +151,17 @@ class HIDPP20Device(BaseDevice):
     def IRoot(self, data, ase, args):
         # featIndex, featType, featVer = getFeature(featId)
         if ase == 0:
-            featId = (args[0] << 4) + args[1]
-            logger.debug(f'getFeature({featId}) = {self.feature_table[featId]}')
-            # we won't support any hidden features and we are also not planning
-            # to support obsolete features ATM so we will set featType to 0
-            self.protocol_reply(data, [self.feature_table.index(featId), 0, 0])
+            featId = unpack_be_u16(args[:2])
+
+            logger.debug(f'getFeature({featId:04x}) = {self.feature_table.index(featId)}')
+            self.protocol_reply(data, [self.feature_table.index(featId), 0, self.feature_version.get(featId, 0)])
 
         # protocolNum, targetSw, pingData = getProtocolVersion(0, 0, pingData)
         elif ase == 1:
-            logger.debug(f'getProtocolVersion() = {self.version_major}.{self.version_minor}')
-            self.protocol_reply(data,
-                                [self.version_major,
-                                 self.version_minor,
-                                 args[2]])
+            pingData = args[2]
+
+            logger.debug(f'getProtocolVersion() = (version) {self.version_major}.{self.version_minor}, (pingData) {pingData}')
+            self.protocol_reply(data, [self.version_major, self.version_minor, pingData])
 
     def IFeatureSet(self, data, ase, args):
         # count = getCount()

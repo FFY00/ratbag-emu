@@ -74,3 +74,11 @@ class AbsInt(Absolute):
 class AbsFloat(Absolute):
     def __init__(self, n):
         super().__init__(float(n))
+
+
+def pack_be_u16(num):
+    return [num >> 8, num & 0xFF]
+
+
+def unpack_be_u16(bytes):
+    return (bytes[0] << 8) + bytes[1]

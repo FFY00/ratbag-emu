@@ -145,4 +145,10 @@ class LogitechGProWirelessDevice(HIDPP20Device):
             0x2201
         ]
 
+        self.feature_version = {
+            HIDPP20Features.IFeatureSet: 1,
+            0x0003: 2
+            # TODO: Some features missing, we need a better way to extract them
+        }
+
         super().__init__()
