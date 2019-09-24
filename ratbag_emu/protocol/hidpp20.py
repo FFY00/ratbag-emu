@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: MIT
 
+import logging
+
 from .base import BaseDevice
+
+logger = logging.getLogger('ratbagemu.protocol.hidpp20')
 
 
 class HIDPP20Report():
@@ -132,7 +136,7 @@ class HIDPP20Device(BaseDevice):
             return
         # Function
         else:
-            print(f'# DEBUG: Got feature {feature}, ASE {ase}')
+            logger.debug(f'Got feature {feature}, ASE {ase}')
             self.features[feature](data, ase, args)
 
     #
@@ -146,14 +150,14 @@ class HIDPP20Device(BaseDevice):
         # featIndex, featType, featVer = getFeature(featId)
         if ase == 0:
             featId = (args[0] << 4) + args[1]
-            print(f'# DEBUG: getFeature({featId}) = {self.feature_table[featId]}')
+            logger.debug(f'getFeature({featId}) = {self.feature_table[featId]}')
             # we won't support any hidden features and we are also not planning
             # to support obsolete features ATM so we will set featType to 0
             self.protocol_reply(data, [self.feature_table.index(featId), 0, 0])
 
         # protocolNum, targetSw, pingData = getProtocolVersion(0, 0, pingData)
         elif ase == 1:
-            print(f'# DEBUG: getProtocolVersion() = {self.version_major}.{self.version_minor}')
+            logger.debug(f'getProtocolVersion() = {self.version_major}.{self.version_minor}')
             self.protocol_reply(data,
                                 [self.version_major,
                                  self.version_minor,
@@ -162,7 +166,7 @@ class HIDPP20Device(BaseDevice):
     def IFeatureSet(self, data, ase, args):
         # count = getCount()
         if ase == 0:
-            print(f'# DEBUG: getCount() = {len(self.feature_table)}')
+            logger.debug(f'getCount() = {len(self.feature_table)}')
             self.protocol_reply(data, [len(self.feature_table)])
 
         # featureID, featureType, featureVersion = getFeatureID(featureIndex)
@@ -173,10 +177,9 @@ class HIDPP20Device(BaseDevice):
                 self.protocol_error(data, self.Errors.OutOfRange)
                 return
 
-            print(f'# DEBUG: getFeatureID({featureIndex}) = {self.feature_table[featureIndex]}')
+            logger.debug(f'getFeatureID({featureIndex}) = {self.feature_table[featureIndex]}')
             # we won't support any hidden features and we are also not planning
             # to support obsolete features ATM so we will set featType to 0
-            print(self.feature_table[featureIndex])
             self.protocol_reply(data, [self.feature_table[featureIndex], 0, 0])
 
     def IFeatureInfo(self, data, ase, args):
