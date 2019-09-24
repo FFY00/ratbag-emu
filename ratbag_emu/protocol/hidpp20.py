@@ -136,7 +136,7 @@ class HIDPP20Device(BaseDevice):
             return
         # Function
         else:
-            logger.debug(f'Got feature {feature}, ASE {ase}')
+            logger.debug(f'Got feature {feature:04x}, ASE {ase}')
             self.features[feature](data, ase, args)
 
     #
