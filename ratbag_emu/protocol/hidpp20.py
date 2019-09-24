@@ -83,7 +83,8 @@ class HIDPP20Device(BaseDevice):
             self.Features.IRoot: self.IRoot,
             self.Features.IFeatureSet: self.IFeatureSet,
             self.Features.IFeatureInfo: self.IFeatureInfo,
-            self.Features.DeviceInformation: self.DeviceInformation
+            self.Features.DeviceInformation: self.DeviceInformation,
+            self.Features.BatteryVoltage: self.BatteryVoltage,
         }
 
         self.events = {}
@@ -239,3 +240,18 @@ class HIDPP20Device(BaseDevice):
 
             logger.debug(f'getFwInfo({entityIdx}) = {entity}')
             self.protocol_reply(data, reply)
+
+    def BatteryVoltage(self, data, ase, args):
+        # batteryVoltage, batteryStatus = getBatteryInfo()
+        if ase == 0:
+            voltage = 4000
+            flags = 2 # Discharging
+
+            logger.debug(f'getBatteryInfo() = (batteryVoltage) {voltage}, (batteryStatus) {flags}')
+            self.protocol_reply(data, pack_be_u16(voltage) + [flags])
+
+        # showBatteryStatus()
+        elif ase == 1:
+            # This function display the battery information in the physical device
+            pass
+
