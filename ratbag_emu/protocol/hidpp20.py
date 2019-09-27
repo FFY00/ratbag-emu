@@ -27,19 +27,94 @@ class HIDPP20ReportType():
 
 
 class HIDPP20Features():
+    # Important
     IRoot = 0x0000
     IFeatureSet = 0x0001
     IFeatureInfo = 0x0002
+    # Common
     DeviceInformation = 0x0003
     DeviceNameAndType = 0x0005
     DeviceGroups = 0x0006
+    DeviceFriendlyName = 0x0007
+    KeepAlive = 0x0008
     ConfigChange = 0x0020
     UniqueIdentifier = 0x0021
+    TargetSoftware = 0x0030
     WirelessSignalStrength = 0x0080
-    DFUControl0 = 0x00c0
-    DFUControl1 = 0x00c1
+    DFULiteControl = 0x00c0
+    DFUControlUnsigned = 0x00c1
+    DFUControlSigned = 0x00c2
     DFU = 0x00d0
-
+    BatteryUnifiedLevelStatus = 0x1000
+    BatteryVoltage = 0x1001
+    ChargingControl = 0x1010
+    LedSwControl = 0x1300
+    ChangeHost = 0x1814
+    Backlight1 = 0x1981
+    Backlight2 = 0x1982
+    PresenterControl = 0x1a00
+    KeyboardMouseReprogramable1 = 0x1b00
+    KeyboardMouseReprogramable2 = 0x1b01
+    KeyboardMouseReprogramable3 = 0x1b02
+    KeyboardMouseReprogramable4 = 0x1b03
+    KeyboardMouseReprogramable5 = 0x1b04
+    ReportHIDUsages = 0x1bc0
+    PersistentRemappableAction = 0x1c00
+    WirelessDeviceStatus = 0x1d4b
+    RemainingPairings = 0x1df0
+    # Mouse
+    SwapLeftRightButton = 0x2001
+    ButtonSwapControl = 0x2005
+    PointerAxesOrientation = 0x2006
+    VerticalScrolling = 0x2100
+    SmartShiftWheel = 0x2110
+    HiResScrolling = 0x2120
+    HiResWheel = 0x2121
+    RatchetWheel = 0x2130
+    ThumbWheel = 0x2150
+    MousePointer = 0x2200
+    AdjustableDPI = 0x2201
+    PointerMotionScalling = 0x2205
+    SensorAngleSnapping = 0x2230
+    SurfaceTuning = 0x2240
+    HybridTrackingEngine = 0x2400
+    # Keyboard
+    FnInversion = 0x40a0
+    FnInversionWithDefaultState = 0x40a2
+    FnInversionMultiHost = 0x40a3
+    Encryption = 0x4100
+    LockKeyState = 0x4220
+    SolarDashboard = 0x4301
+    KeyboardLayout = 0x4520
+    DisableKeys = 0x4521
+    DisableKeysByUsage = 0x4522
+    DualPlatform = 0x4530
+    KeyboardInternationalLayouts = 0x4540
+    Crown = 0x4600
+    # Touchpad
+    TouchpadFwItems = 0x6010
+    TouchpadSwItems = 0x6011
+    TouchpadWin8FwItems = 0x6012
+    TapEnable = 0x6020
+    TapEnableExtended = 0x6021
+    CursorBalistic = 0x6030
+    TouchpadResolutionDivider = 0x6040
+    TouchpadRawXY = 0x6100
+    TouchMouseRawTouchPoints = 0x6110
+    BTTouchMouseSettings = 0x6120
+    Gestures1 = 0x6500
+    Gestures2 = 0x6501
+    # Gaming
+    GamingGKeys = 0x8010
+    GamingMKeys = 0x8020
+    MacroRecordKey = 0x8030
+    BrightnessControl = 0x8040
+    AdjustableReportRate = 0x8060
+    ColorLEDEffects = 0x8070
+    RGBEffects = 0x8071
+    PerformanceModeControl = 0x8090
+    OnboardProfiles = 0x8100
+    MouseButtonSpy = 0x8110
 
 class HIDPP20Errors():
     NoError = 0
@@ -48,8 +123,8 @@ class HIDPP20Errors():
     OutOfRange = 3
     HWError = 4
     LogitechInternal = 5
-    INVALID_FEATURE_INDEX = 6
-    INVALID_FUNCTION_ID = 7
+    InvalidFeatureIndex = 6
+    InvalidFunctionId = 7
     Busy = 8
     Unsupported = 9
 

@@ -137,20 +137,20 @@ class LogitechGProWirelessDevice(HIDPP20Device):
             HIDPP20Features.IFeatureSet,
             HIDPP20Features.DeviceInformation,
             HIDPP20Features.DeviceNameAndType,
-            0x1d4b,
-            0x0020,
-            0x1001,
-            0x8070,
-            0x1300,
-            0x8100,
-            0x8110,
-            0x8060,
-            0x2201
+            HIDPP20Features.WirelessDeviceStatus,
+            HIDPP20Features.ConfigChange,
+            HIDPP20Features.BatteryVoltage,
+            HIDPP20Features.ColorLEDEffects,
+            HIDPP20Features.LedSwControl,
+            HIDPP20Features.OnboardProfiles,
+            HIDPP20Features.MouseButtonSpy,
+            HIDPP20Features.AdjustableReportRate,
+            HIDPP20Features.AdjustableDPI,
         ]
 
         self.feature_version = {
             HIDPP20Features.IFeatureSet: 1,
-            0x0003: 2
+            HIDPP20Features.DeviceInformation: 2,
             # TODO: Some features missing, we need a better way to extract them
         }
 
