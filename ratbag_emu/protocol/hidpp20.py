@@ -59,12 +59,17 @@ HIDPP20Entity = namedtuple('HIDPP20Entity', ['type', 'fwName', 'revision',
 
 
 class HIDPP20Device(BaseDevice):
-    feature_table = {}
-    feature_version = {}
-
     def __init__(self):
         assert hasattr(self, 'feature_table'), 'Feature table missing'
-        assert hasattr(self, 'version_major') and hasattr(self, 'version_minor'), 'Protocol version missing'
+
+        for attr in ['feature_version', 'entities']:
+            if not hasattr(self, attr):
+                setattr(self, attr, [])
+
+        if not hasattr(self, 'version_major') or not hasattr(self, 'version_minor'):
+            self.version_major = 2
+            self.version_minor = 0
+
         super().__init__({}, self.name, self.info, self.rdescs,
                          self.shortname)
 
