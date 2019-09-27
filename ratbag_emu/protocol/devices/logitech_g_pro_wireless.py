@@ -129,6 +129,9 @@ class LogitechGProWirelessDevice(HIDPP20Device):
         self.id = id
 
         # HID++ 2.0 specific settings
+        self.version_major = 4
+        self.version_minor = 2
+
         self.feature_table = [
             HIDPP20Features.IRoot,
             HIDPP20Features.IFeatureSet,

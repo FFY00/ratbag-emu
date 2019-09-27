@@ -64,6 +64,7 @@ class HIDPP20Device(BaseDevice):
 
     def __init__(self):
         assert hasattr(self, 'feature_table'), 'Feature table missing'
+        assert hasattr(self, 'version_major') and hasattr(self, 'version_minor'), 'Protocol version missing'
         super().__init__({}, self.name, self.info, self.rdescs,
                          self.shortname)
 
@@ -88,10 +89,6 @@ class HIDPP20Device(BaseDevice):
         }
 
         self.events = {}
-
-        # Device proprieties
-        self.version_major = 4
-        self.version_minor = 2
 
         self.expecting_reply = False
 
