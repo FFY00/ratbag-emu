@@ -1,0 +1,3 @@
+[submodule "libratbag"]
+	path = libratbag
+	url = https://github.com/libratbag/libratbag.git
