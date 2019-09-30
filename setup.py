@@ -43,7 +43,8 @@ setup(
     install_requires=['hid-tools', 'connexion'],
     extras_require={
         'ui': ['connexion[swagger-ui]'],
-        'test': ['libevdev']
+        'test': ['libevdev'],
+        'production server': ['uwsgi']
     },
     test_requires=[
         'pytest',

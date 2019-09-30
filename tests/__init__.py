@@ -92,8 +92,15 @@ class TestBase(object):
         with open(f'{logs}-stdout.txt', 'w') as stdout, \
              open(f'{logs}-stderr.txt', 'w') as stderr:
             try:
-                args = ['/usr/bin/env', 'python3', '-m', 'ratbag_emu']
-                p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
+                try:
+                    args = ['uwsgi', '--http', ':8080',
+                                     '--plugin', 'python',
+                                     '--wsgi-file', f'{os.path.dirname(f)}/../ratbag_emu/__main__.py',
+                                     '--enable-threads']
+                    p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
+                except FileNotFoundError:
+                    args = ['/usr/bin/env', 'python3', '-m', 'ratbag_emu']
+                    p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
                 sleep(2)
                 yield
             finally:
