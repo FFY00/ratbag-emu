@@ -156,6 +156,14 @@ class TestBase(object):
     def client(self):
         yield RatbagemuClient()
 
+    @pytest.fixture()
+    def id(self, client):
+        id = self.add_device(client)
+
+        yield id
+
+        client.delete_device(id)
+
     def add_device(self, client, hw_settings={}, name=None):
         data = {}
         if name:
