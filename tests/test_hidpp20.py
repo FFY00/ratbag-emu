@@ -41,3 +41,43 @@ class TestHIDPP20(TestBase):
         yield dev
 
         hidpp.hidpp20_device_destroy(dev)
+
+    # IRoot
+    def test_root_get_feature(self, client, id, hidpp, device):
+        feature_index = hidpp.new_uint8_tp()
+        feature_type = hidpp.new_uint8_tp()
+        feature_version = hidpp.new_uint8_tp()
+
+        # IFeatureSet
+        assert not hidpp.hidpp_root_get_feature(device, 0x0001, feature_index, feature_type, feature_version)
+
+        assert hidpp.uint8_tp_value(feature_index) == 1
+        assert hidpp.uint8_tp_value(feature_type) == 0
+        assert hidpp.uint8_tp_value(feature_version) == 1
+
+        # DeviceInformation
+        assert not hidpp.hidpp_root_get_feature(device, 0x0003, feature_index, feature_type, feature_version)
+
+        assert hidpp.uint8_tp_value(feature_index) == 2
+        assert hidpp.uint8_tp_value(feature_type) == 0
+        assert hidpp.uint8_tp_value(feature_version) == 2
+
+        # BatteryVoltage
+        assert not hidpp.hidpp_root_get_feature(device, 0x1001, feature_index, feature_type, feature_version)
+
+        assert hidpp.uint8_tp_value(feature_index) == 6
+        assert hidpp.uint8_tp_value(feature_type) == 0
+        assert hidpp.uint8_tp_value(feature_version) == 0
+
+    '''
+    FIXME: I can't seem to interface with unsigned int pointers
+
+    def test_get_root_protocol_version(self, client, id, hidpp, device):
+        major = hidpp.new_uintp()
+        minor = hidpp.new_uintp()
+
+        assert not hidpp.hidpp20_root_get_protocol_version(device, major, minor)
+
+        assert hidpp.uintp_value(major) == 4
+        assert hidpp.uintp_value(minor) == 2
+    '''
