@@ -12,7 +12,7 @@ import pytest
 import requests
 import libevdev
 
-from time import sleep, strftime
+from time import sleep, strftime, time
 from pathlib import Path
 
 f = os.readlink(__file__) if os.path.islink(__file__) else __file__
@@ -126,7 +126,14 @@ class TestBase(object):
         response = client.get(f'/devices/{id}')
         assert response.status_code == 200
 
-        input_nodes = response.json().get('input_nodes', {})
+        sleep(0.5)
+        input_nodes = []
+        max_time = time() + 10
+        while time() < max_time and not input_nodes:
+            response = client.get(f'/devices/{id}')
+            assert response.status_code == 200
+            input_nodes = response.json().get('input_nodes', [])
+            sleep(0.1)
 
         # Open the event nodes
         event_nodes = []
