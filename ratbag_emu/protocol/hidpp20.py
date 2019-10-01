@@ -209,6 +209,9 @@ class HIDPP20Device(BaseDevice):
     # Logic definition
     #
     def protocol_receive(self, data, size, rtype):
+        if data[self.Report.ReportType] not in [self.ReportType.Short, self.ReportType.Long]:
+            return
+
         report_type = data[self.Report.ReportType]
         feature = self.feature_table[data[self.Report.Feature]]
         ase = data[self.Report.ASE] >> 4
