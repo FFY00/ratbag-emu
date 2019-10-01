@@ -165,6 +165,17 @@ class TestBase(object):
 
         client.delete_device(id)
 
+    @pytest.fixture(scope='session')
+    def hidpp(self):
+        path = os.path.join(cur_dir, '..', 'libratbag', 'build')
+        if os.path.isfile(os.path.join(path, 'hidpp.py')):
+            if path not in sys.path:
+                sys.path.insert(0, path)
+
+        import hidpp
+
+        yield hidpp
+
     def add_device(self, client, hw_settings={}, name=None):
         data = {}
         if name:
