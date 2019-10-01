@@ -228,7 +228,10 @@ class HIDPP20Device(BaseDevice):
         # Function
         else:
             logger.debug(f'Got feature {feature:04x}, ASE {ase}')
-            self.features[feature](data, ase, args)
+            try:
+                self.features[feature](data, ase, args)
+            except KeyError:
+                logger.debug(f"Feature {feature:04x} hasn't been implemented. Ignoring...")
 
     #
     # Event definitions
