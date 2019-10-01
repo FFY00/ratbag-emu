@@ -126,18 +126,23 @@ class TestBase(object):
         assert response.status_code == 201
         return response.json()['id']
 
-    def simulate(self, client, id, data):
+    def get_device_nodes(self, client, id, timeout=10):
         response = client.get(f'/devices/{id}')
         assert response.status_code == 200
 
         sleep(0.5)
         input_nodes = []
-        max_time = time() + 10
+        max_time = time() + timeout
         while time() < max_time and not input_nodes:
             response = client.get(f'/devices/{id}')
             assert response.status_code == 200
             input_nodes = response.json().get('input_nodes', [])
             sleep(0.1)
+
+        return input_nodes
+
+    def simulate(self, client, id, data):
+        input_nodes = self.get_device_nodes(client, id)
 
         # Open the event nodes
         event_nodes = []
