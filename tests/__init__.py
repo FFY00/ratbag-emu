@@ -15,8 +15,9 @@ import libevdev
 from time import sleep, strftime, time
 from pathlib import Path
 
-f = os.readlink(__file__) if os.path.islink(__file__) else __file__
-path = os.path.realpath(os.path.join(f, "..", "..", "src"))
+cur_file = os.readlink(__file__) if os.path.islink(__file__) else __file__
+cur_dir = os.path.realpath(os.path.dirname(cur_file))
+path = os.path.realpath(os.path.join(cur_dir, '..', 'src'))
 
 if path not in sys.path:
     sys.path.insert(0, path)
@@ -139,7 +140,7 @@ class TestBase(object):
                 try:
                     args = ['uwsgi', '--http', ':8080',
                                      '--plugin', 'python',
-                                     '--wsgi-file', f'{os.path.dirname(f)}/../ratbag_emu/__main__.py',
+                                     '--wsgi-file', f'{cur_dir}/../ratbag_emu/__main__.py',
                                      '--enable-threads']
                     p = subprocess.Popen(args, stdout=stdout, stderr=stderr)
                 except FileNotFoundError:
