@@ -27,9 +27,9 @@ from ratbag_emu.util import MM_TO_INCH
 from ratbag_emu.protocol.base import MouseData
 
 
-class Client(object):
-    def __init__(self, url='http://localhost:8080'):
-        self.url = url
+class RatbagemuClient(object):
+    def __init__(self, url='http://localhost', port=8080):
+        self.url = f'{url}:{port}'
 
     def get(self, path):
         return requests.get(f'{self.url}{path}')
@@ -47,6 +47,50 @@ class Client(object):
                             data=data,
                             json=json)
 
+    '''
+    ratbag-emu functions
+    '''
+    def create(self, shortname, initial_state=None):
+        data = {
+            'shortname': shortname
+        }
+        if initial_state:
+            data['initial_state'] =  initial_state
+        response = self.post('/devices/add', json=data)
+        assert response.status_code == 201
+        return response.json()['id']
+
+    def delete_device(self, id):
+        response = self.delete(f'/devices/{id}')
+        assert response.status_code == 204
+
+    def get_dpi(self, id, dpi_id):
+        response = self.get(f'/devices/{id}/phys_props/dpi/{dpi_id}')
+        assert response.status_code == 200
+        return response.json()
+
+    def set_dpi(self, id, dpi_id, new_dpi):
+        response = self.put(f'/devices/{id}/phys_props/dpi/{dpi_id}', json=new_dpi)
+        assert response.status_code == 200
+
+    def get_input_nodes(self, id):
+        response = self.get(f'/devices/{id}')
+        if response.status_code == 200 and 'input_nodes' in response.json():
+            return response.json()['input_nodes']
+
+    def send_event(self, id, event):
+        response = self.post(f'/devices/{id}/event', json=event)
+        assert response.status_code == 200
+
+    def wait_for_device_nodes(self, id, timeout=10):
+        sleep(0.5)
+        input_nodes = self.get_input_nodes(id)
+        max_time = time() + timeout
+        while time() < max_time and not input_nodes:
+            input_nodes = self.get_input_nodes(id)
+            sleep(0.1)
+
+        return input_nodes
 
 class MouseData(object):
     '''
@@ -110,7 +154,7 @@ class TestBase(object):
     @pytest.fixture(autouse=True, scope='session')
     @pytest.mark.usesfixtures('server')
     def client(self):
-        yield Client()
+        yield RatbagemuClient()
 
     def add_device(self, client, hw_settings={}, name=None):
         data = {}
@@ -126,23 +170,8 @@ class TestBase(object):
         assert response.status_code == 201
         return response.json()['id']
 
-    def get_device_nodes(self, client, id, timeout=10):
-        response = client.get(f'/devices/{id}')
-        assert response.status_code == 200
-
-        sleep(0.5)
-        input_nodes = []
-        max_time = time() + timeout
-        while time() < max_time and not input_nodes:
-            response = client.get(f'/devices/{id}')
-            assert response.status_code == 200
-            input_nodes = response.json().get('input_nodes', [])
-            sleep(0.1)
-
-        return input_nodes
-
     def simulate(self, client, id, data):
-        input_nodes = self.get_device_nodes(client, id)
+        input_nodes = client.wait_for_device_nodes(id)
 
         # Open the event nodes
         event_nodes = []
