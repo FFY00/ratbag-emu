@@ -116,8 +116,12 @@ class TestBase(object):
         data = {}
         if name:
             data['shortname'] = name
-        else:
+        elif hw_settings:
             data['hw_settings'] = hw_settings
+        elif hasattr(self, 'shortname'):
+            data['shortname'] = self.shortname
+        else:
+            data['hw_settings'] = {}
         response = client.post('/devices/add', json=data)
         assert response.status_code == 201
         return response.json()['id']
