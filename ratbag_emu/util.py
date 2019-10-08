@@ -82,3 +82,14 @@ def pack_be_u16(num):
 
 def unpack_be_u16(bytes):
     return (bytes[0] << 8) + bytes[1]
+
+
+def flatten(items):
+    ret = []
+    for item in items:
+        if isinstance(item, list):
+            for i in item:
+                ret.append(i)
+        else:
+            ret.append(item)
+    return ret

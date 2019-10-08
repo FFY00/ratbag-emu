@@ -6,7 +6,7 @@ import random
 from collections import namedtuple
 
 from .base import BaseDevice
-from ratbag_emu.util import pack_be_u16, unpack_be_u16
+from ratbag_emu.util import pack_be_u16, unpack_be_u16, flatten
 
 logger = logging.getLogger('ratbagemu.protocol.hidpp20')
 
@@ -298,8 +298,8 @@ class HIDPP20Device(BaseDevice):
                               'featureID': f'{featId:04x}',
                               'featureVersion': self.feature_version.get(featId, 0)
                           })
-            self.protocol_reply(data, pack_be_u16(featId) +
-                [0, self.feature_version.get(featId, 0)])
+            self.protocol_reply(data, flatten([pack_be_u16(featId), 0,
+                                self.feature_version.get(featId, 0)]))
 
     def IFeatureInfo(self, data, ase, args):
         return
@@ -346,16 +346,6 @@ class HIDPP20Device(BaseDevice):
 
             entity = self.entities[entityIdx]
 
-            reply = [entity.type]
-            reply += [char for char in entity.fwName[:3]]
-            reply += [int(entity.fwName[3:])]
-            reply += [entity.revision]
-            reply += pack_be_u16(entity.build)
-            reply += [entity.active]
-            reply += pack_be_u16(entity.trPid)
-            reply += [entity.extraVer[0]]
-            reply += [entity.extraVer[5]]
-
             self._log_msg('getFwInfo',
                           input={'entityIdx': entityIdx},
                           out={
@@ -367,7 +357,17 @@ class HIDPP20Device(BaseDevice):
                               'trPid': entity.trPid,
                               'extraVer': entity.extraVer
                           })
-            self.protocol_reply(data, reply)
+            self.protocol_reply(data, flatten([
+                entity.type,
+                entity.fwName[:3],
+                int(entity.fwName[3:]),
+                entity.revision,
+                pack_be_u16(entity.build),
+                entity.active,
+                pack_be_u16(entity.trPid),
+                entity.extraVer[0],
+                entity.extraVer[5]
+            ]))
 
     def BatteryVoltage(self, data, ase, args):
         # batteryVoltage, batteryStatus = getBatteryInfo()
@@ -381,7 +381,7 @@ class HIDPP20Device(BaseDevice):
                               'batteryVoltage': voltage,
                               'batteryStatus': f'{flags:b}'
                           })
-            self.protocol_reply(data, pack_be_u16(voltage) + [flags])
+            self.protocol_reply(data, flatten([pack_be_u16(voltage), flags]))
 
         # showBatteryStatus()
         elif ase == 1:
