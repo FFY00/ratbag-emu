@@ -172,6 +172,15 @@ class HIDPP20Device(BaseDevice):
 
         self.expecting_reply = False
 
+    def _log_msg(self, function, input={}, out={}, error=None):
+        def format_args(args):
+            return ', '.join(f'({key}) {value}' for key, value in args.items())
+
+        if error:
+            logger.debug(f'{function}({format_args(input)}) = {error}')
+        else:
+            logger.debug(f'{function}({format_args(input)}) = {format_args(out)}')
+
     #
     # Interface functions
     #
@@ -245,20 +254,30 @@ class HIDPP20Device(BaseDevice):
         if ase == 0:
             featId = unpack_be_u16(args[:2])
 
-            logger.debug(f'getFeature({featId:04x}) = {self.feature_table.index(featId)}')
+            self._log_msg('getFeature',
+                          input={'featId': f'{featId:04x}'},
+                          out={
+                              'featIndex': self.feature_table.index(featId),
+                              'featVer': self.feature_version.get(featId, 0)
+                          })
             self.protocol_reply(data, [self.feature_table.index(featId), 0, self.feature_version.get(featId, 0)])
 
         # protocolNum, targetSw, pingData = getProtocolVersion(0, 0, pingData)
         elif ase == 1:
             pingData = args[2]
 
-            logger.debug(f'getProtocolVersion() = (version) {self.version_major}.{self.version_minor}, (pingData) {pingData}')
+            self._log_msg('getProtocolVersion',
+                          out={
+                              'version': f'{self.version_major}.{self.version_minor}',
+                              'pingData': pingData
+                          })
             self.protocol_reply(data, [self.version_major, self.version_minor, pingData])
 
     def IFeatureSet(self, data, ase, args):
         # count = getCount()
         if ase == 0:
-            logger.debug(f'getCount() = {len(self.feature_table)}')
+            self._log_msg('getCount',
+                          out={'count': len(self.feature_table)})
             self.protocol_reply(data, [len(self.feature_table) - 1])
 
         # featureID, featureType, featureVersion = getFeatureID(featureIndex)
@@ -266,13 +285,21 @@ class HIDPP20Device(BaseDevice):
             featureIndex = args[0]
 
             if featureIndex >= len(self.feature_table):
-                logger.debug(f'getFeatureID({featureIndex}) = ERR_OUT_OF_RANGE')
+                self._log_msg('getFeatureID',
+                              input={'featureID': featureIndex},
+                              error='ERR_OUT_OF_RANGE')
                 self.protocol_error(data, self.Errors.OutOfRange)
                 return
 
             featId = self.feature_table[featureIndex]
-            logger.debug(f'getFeatureID({featureIndex}) = {featId:04x}')
-            self.protocol_reply(data, pack_be_u16(featId) + [0, self.feature_version.get(featId, 0)])
+            self._log_msg('getFeatureID',
+                          input={'featureIndex': featureIndex},
+                          out={
+                              'featureID': f'{featId:04x}',
+                              'featureVersion': self.feature_version.get(featId, 0)
+                          })
+            self.protocol_reply(data, pack_be_u16(featId) +
+                [0, self.feature_version.get(featId, 0)])
 
     def IFeatureInfo(self, data, ase, args):
         return
@@ -296,8 +323,14 @@ class HIDPP20Device(BaseDevice):
                 0x00,
             ]
             logger.debug(f'FIXME: add modelId')
-            logger.debug(f'getDeviceInfo() = (entityCnt) {reply[0]}, (unitId) {pack_be_u16(reply[1], reply[2])}, '
-                '(transport) USB/eQUAD, (modelId) {pack_be_u16(reply[5], reply[6])}, (extendedModelId) {reply[7]}')
+            self._log_msg('getDeviceInfo',
+                          out={
+                              'entityCnt': reply[0],
+                              'unitId': pack_be_u16(reply[1], reply[2]),
+                              'transport': 'USB/eQUAD',
+                              'modelId': pack_be_u16(reply[5], reply[6]),
+                              'extendedModelId': reply[7]
+                          })
             self.protocol_reply(data, reply)
 
         # type, fwName, rev, build, active, trPid, extraVer = getFwInfo(entityIdx)
@@ -305,7 +338,9 @@ class HIDPP20Device(BaseDevice):
             entityIdx = args[0]
 
             if entityIdx >= len(self.entities):
-                logger.debug(f'getFwInfo({entityIdx}) = ERR_OUT_OF_RANGE')
+                self._log_msg('getFwInfo',
+                              input={'entityIdx': entityIdx},
+                              error='ERR_OUT_OF_RANGE')
                 self.protocol_error(data, self.Errors.OutOfRange)
                 return
 
@@ -321,7 +356,17 @@ class HIDPP20Device(BaseDevice):
             reply += [entity.extraVer[0]]
             reply += [entity.extraVer[5]]
 
-            logger.debug(f'getFwInfo({entityIdx}) = {entity}')
+            self._log_msg('getFwInfo',
+                          input={'entityIdx': entityIdx},
+                          out={
+                              'type': entity.type,
+                              'fwName': entity.fwName,
+                              'rev': entity.revision,
+                              'build': entity.build,
+                              'active': entity.active,
+                              'trPid': entity.trPid,
+                              'extraVer': entity.extraVer
+                          })
             self.protocol_reply(data, reply)
 
     def BatteryVoltage(self, data, ase, args):
@@ -331,6 +376,11 @@ class HIDPP20Device(BaseDevice):
             flags = 2 # Discharging
 
             logger.debug(f'getBatteryInfo() = (batteryVoltage) {voltage}, (batteryStatus) {flags}')
+            self._log_msg('getBatteryInfo',
+                          out={
+                              'batteryVoltage': voltage,
+                              'batteryStatus': f'{flags:b}'
+                          })
             self.protocol_reply(data, pack_be_u16(voltage) + [flags])
 
         # showBatteryStatus()
