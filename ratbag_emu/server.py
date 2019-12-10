@@ -90,8 +90,6 @@ def add_device():
 
     DeviceHandler.wait_for_device_nodes(device.id)
 
-    sleep(0.1)
-
     return DeviceHandler.get_device(device.id), 201
 
 

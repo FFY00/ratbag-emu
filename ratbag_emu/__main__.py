@@ -41,6 +41,7 @@ devices_thread.start()
 # Export server for uwsgi
 server = create_server()
 application = server.app
+logger.setLevel(logging.DEBUG)
 
 if __name__ == '__main__':
     if sys.version_info < (3, 6):
