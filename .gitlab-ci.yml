@@ -1,0 +1,180 @@
+# vim: set expandtab shiftwidth=2 tabstop=8 textwidth=0:
+#
+
+include:
+  # Fedora container builder template
+  - project: 'wayland/ci-templates'
+    ref: b7030c2cd0d6ccc5f6d4f8299bafa4daa9240d71 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+    file: '/templates/fedora.yml'
+
+stages:
+  - container_prep   # rebuild the container images if there is a change
+  - notif_pending
+  - build            # for actually building things
+  - notif_done
+
+
+variables:
+  ###############################################################################
+  # This is the list of packages required to build libinput with the default    #
+  # configuration.                                                              #
+  #                                                                             #
+  # Run dnf install/apt-get install/.. with the list of packages for your       #
+  # distribution                                                                #
+  #                                                                             #
+  # See the documentation here:                                                 #
+  # https://wayland.freedesktop.org/libinput/doc/latest/building_libinput.html  #
+  ###############################################################################
+  FEDORA_RPMS:        'git gcc gcc-c++ pkgconf-pkg-config meson check-devel libudev-devel libevdev-devel doxygen graphviz python3-sphinx python3-recommonmark python3-pip libwacom-devel mtdev-devel diffutils valgrind'
+
+  ############################ end of package lists #############################
+
+  # these tags should be updated each time the list of packages is updated
+  # changing these will force rebuilding the associated image
+  # Note: these tags have no meaning and are not tied to a particular
+  # libinput version
+  FEDORA_TAG: '2020-02-11.0'
+  FEDORA_VERSION: '31'
+
+  QEMU_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FEDORA_VERSION:$FEDORA_TAG
+
+#################################################################
+#                                                               #
+#                    container prep stage                       #
+#                                                               #
+#################################################################
+
+#
+# This stage will recreate the container images only if the image
+# is too old or if it is missing some dependencies.
+#
+
+qemu-prep:
+  extends: .fedora@qemu-ifnot-exists
+  stage: container_prep
+  variables:
+    GIT_STRATEGY: none
+  artifacts:
+    name: logs-$CI_PIPELINE_ID
+    when: always
+    expire_in: 1 week
+    paths:
+      - console.out
+
+#################################################################
+#                                                               #
+#                       build stage                             #
+#                                                               #
+#################################################################
+
+.check_tainted: &check_tainted |
+  # make sure the kernel is not tainted
+  if [[ "$(ssh localhost -p 5555 cat /proc/sys/kernel/tainted)" -gt 0 ]];
+  then
+    echo tainted kernel ;
+    exit 1 ;
+  fi
+
+test-suite-vm:
+  stage: build
+  image: $QEMU_CONTAINER_IMAGE
+  tags:
+    - kvm
+    - bentiss
+  variables:
+    MESON_BUILDDIR: build_dir
+  script:
+    - export STATUS_API="https://api.github.com/repos/$DIST_REPOSITORY/statuses/$DIST_SHA1"
+    - export DIR=$(echo $DIST_REPOSITORY  | cut -d/ -f2)
+    - export BRANCH=${DIST_BRANCH/refs\/heads\//}
+    - export GITHUB_TOKEN_NAME="$(echo ${DIST_REPOSITORY} | sed -r 's/[^a-zA-Z0-9]+/_/g' | tr a-z A-Z)_TOKEN"
+    - echo $GITHUB_TOKEN_NAME
+
+    # start our vm, no args required
+    - /app/start_vm.sh
+
+    - *check_tainted
+
+    - "scp -P 5555 -r $PWD localhost:"
+
+    - ssh localhost -p 5555 python3 -m pip install --upgrade pip
+
+    # install hid-tools
+    - ssh localhost -p 5555 pip install parse libevdev pyudev
+    - ssh localhost -p 5555 git clone https://gitlab.freedesktop.org/libevdev/hid-tools.git
+    - ssh localhost -p 5555 "cd hid-tools ; python3 setup.py install"
+
+    # clone the branch
+    - ssh localhost -p 5555 git clone https://github.com/$DIST_REPOSITORY -b $BRANCH
+    - ssh localhost -p 5555 "cd $DIR ; git checkout $DIST_SHA1"
+    - ssh localhost -p 5555 "cd $DIR ; git checkout -b test"
+
+    - ssh localhost -p 5555 "cd $DIR ; pip install -r requirements.txt"
+
+    # install pytest
+    - ssh localhost -p 5555 pip install pytest pytest-dependency pytest-xdist pytest-cov
+
+    # run pytest
+    - ssh localhost -p 5555 "cd $DIR ; pytest --log-level=INFO --cov=ratbag_emu --cov-report=xml"
+
+    # upload coverage reports to codecov
+    - ssh localhost -p 5555 "VCS_COMMIT_ID=$DIST_SHA1 VCS_BRANCH_NAME=$BRANCH CI_BUILD_URL=$CI_PIPELINE_URL CI_BUILD_ID=$CI_PIPELINE_ID VCS_PULL_REQUEST=$DIST_EVENT_NUMBER bash <(curl -s https://codecov.io/bash)"
+
+#    - "scp -P 5555 -r $PWD localhost:"
+#    - ssh localhost -p 5555 rm -rf $CI_PROJECT_NAME/"$MESON_BUILDDIR"
+#    - ssh localhost -p 5555 "cd $CI_PROJECT_NAME ; meson \"$MESON_BUILDDIR\" $MESON_ARGS"
+#    - ssh localhost -p 5555 "cd $CI_PROJECT_NAME ; meson configure \"$MESON_BUILDDIR\" "
+#    - ssh localhost -p 5555 "cd $CI_PROJECT_NAME ; ninja -C \"$MESON_BUILDDIR\" $NINJA_ARGS"
+#    - ssh localhost -p 5555 "cd $CI_PROJECT_NAME ; meson test -C \"$MESON_BUILDDIR\" --print-errorlogs" && touch .success || true
+#
+#    # no matter the results of the tests, we want to fetch the logs
+#    - scp -P 5555 -r localhost:$CI_PROJECT_NAME/$MESON_BUILDDIR .
+
+    - *check_tainted
+
+    - ssh localhost -p 5555 halt -p || true
+    - sleep 2
+    - kill $(pgrep qemu) || true
+
+    - touch .success
+
+    # contact github on our status
+    - curl -X POST
+           -H "Content-Type:application/json"
+           -H "Authorization:token $GITHUB_TOKEN"
+           -d "{
+                \"state\":\"success\",
+                \"target_url\":\"${CI_PIPELINE_URL}\",
+                \"description\":\"Run pytest\",
+                \"context\":\"Gitlab CI\"
+              }"
+           $STATUS_API
+
+  after_script:
+     - if [[ ! -e .success ]] ;
+       then
+         export STATUS_API="https://api.github.com/repos/$DIST_REPOSITORY/statuses/$DIST_SHA1" ;
+         curl -X POST
+              -H "Content-Type:application/json"
+              -H "Authorization:token $GITHUB_TOKEN"
+              -d "{
+                  \"state\":\"failure\",
+                  \"target_url\":\"${CI_PIPELINE_URL}\",
+                  \"description\":\"Run pytest\",
+                  \"context\":\"Gitlab CI\"
+                }"
+              $STATUS_API ;
+       fi
+  artifacts:
+    name: logs-$CI_PIPELINE_ID
+    when: always
+    expire_in: 1 week
+    paths:
+      - console.out
+
+  only:
+    variables:
+      - $DIST_SHA1
+      - $DIST_REPOSITORY_URL
+
+
