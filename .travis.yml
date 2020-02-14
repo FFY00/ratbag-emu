@@ -1,0 +1,47 @@
+dist: bionic
+
+env:
+  - ARCH_DATE=2020.02.04
+
+cache:
+  directories:
+    - $HOME/vm/$ARCH_DATE
+
+language: minimal
+
+before_install:
+  - sudo apt-get update
+
+install:
+  - sudo apt-get install sshpass qemu-system-x86
+
+before_script:
+  # Start the VM
+  - mkdir -p "$HOME"/vm/$ARCH_DATE
+  - [ ! -f "$HOME"/vm/$ARCH_DATE/vm.box ] wget https://vagrantcloud.com/archlinux/boxes/archlinux/versions/$ARCH_DATE/providers/libvirt.box -O "$HOME"/vm/$ARCH_DATE/vm.box
+  - tar xvzf "$HOME"/vm/$ARCH_DATE/vm.box -C "$HOME"/vm/$ARCH_DATE
+  - sudo qemu-system-x86_64 -machine accel=kvm -smp 2 -m 1024 -drive if=virtio,format=qcow2,file="$HOME"/vm/$ARCH_DATE/box.img -device virtio-net-pci,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:22 -display none -daemonize -serial file:"$HOME"/console.out
+  - sshpass -p vagrant ssh -o StrictHostKeyChecking=accept-new vagrant@localhost -p 5555 uname -a
+  # Setup SSH key
+  - ssh-keygen -b 2048 -t rsa -f sshkey -q -N ''
+  - sshpass -p vagrant ssh-copy-id -p 5555 -i sshkey vagrant@localhost || sshpass -p vagrant ssh-copy-id -p 5555 -i sshkey vagrant@localhost
+  - eval $(ssh-agent)
+  - ssh-add sshkey
+  # Update system
+  - ssh vagrant@localhost -p 5555 sudo pacman -Syu base base-devel --noconfirm --needed
+  # Copy repo to the VM
+  - scp -P 5555 -r "$TRAVIS_BUILD_DIR" vagrant@localhost:builddir
+  # Install hid-tools
+  - ssh vagrant@localhost -p 5555 sudo pacman -S --noconfirm python-parse python-pyudev python-pyaml python-libevdev
+  - ssh vagrant@localhost -p 5555 git clone https://gitlab.freedesktop.org/libevdev/hid-tools.git '~/hid-tools'
+  - ssh vagrant@localhost -p 5555 'cd hid-tools; python setup.py install'
+  # Install pytest & mypy
+  - ssh vagrant@localhost -p 5555 sudo pacman -S --noconfirm python-pytest python-pytest-xdist python-pytest-cov python-mypy
+
+script:
+  - ssh vagrant@localhost -p 5555 "cd builddir; sudo pytest --log-level=INFO --cov=ratbag_emu --cov-report=xml"
+  - ssh vagrant@localhost -p 5555 "cd buildir; mypy --ignore-missing-imports -p ratbag_emu"
+
+after_success: ssh vagrant@localhost -p 5555 "CI=$CI TRAVIS=$TRAVIS SHIPPABLE=$SHIPPABLE $(env | grep '^TRAVIS_') bash <(curl -s https://codecov.io/bash)"
+
+after_script: ssh vagrant@localhost -p 5555 poweroff
