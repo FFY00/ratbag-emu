@@ -1,0 +1,21 @@
+name: Push documentation
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Build and Deploy
+      uses: JacksonMaxfield/github-pages-deploy-action-python@master
+      env:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        BASE_BRANCH: master
+        BRANCH: gh-pages
+        FOLDER: docs/build/html
+        BUILD_SCRIPT: cd docs && make && touch build/html/.nojekyll
