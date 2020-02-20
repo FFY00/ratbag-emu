@@ -50,30 +50,60 @@ class Device(object):
         Generates a random name
         '''
         device_names = [
-                'mara', 'capybara', 'porcupine', 'paca',
-                'vole', 'woodrat', 'gerbil', 'shrew',
-                'hutia', 'beaver', 'squirrel', 'chinchilla',
-                'rabbit', 'viscacha', 'hare', 'degu',
-                'gundi', 'acouchy', 'nutria', 'paca',
-                'hamster', 'zokor', 'chipmunk', 'gopher',
-                'marmot', 'groundhog', 'suslik', 'agouti',
-                'blesmol',
+            'mara', 'capybara', 'porcupine', 'paca', 'vole', 'woodrat',
+            'gerbil', 'shrew', 'hutia', 'beaver', 'squirrel', 'chinchilla',
+            'rabbit', 'viscacha', 'hare', 'degu', 'gundi', 'acouchy', 'nutria',
+            'paca', 'hamster', 'zokor', 'chipmunk', 'gopher', 'marmot',
+            'groundhog', 'suslik', 'agouti', 'blesmol',
         ]
 
         device_attr = [
-                'sobbing', 'whooping', 'barking', 'yapping',
-                'howling', 'squawking', 'cheering', 'warbling',
-                'thundering', 'booming', 'blustering', 'humming',
-                'crying', 'bawling', 'roaring', 'raging',
-                'chanting', 'crooning', 'murmuring', 'bellowing',
-                'wailing', 'weeping', 'screaming', 'yelling',
-                'yodeling', 'singing', 'honking', 'hooting',
-                'whispering', 'hollering',
+            'sobbing', 'whooping', 'barking', 'yapping', 'howling', 'squawking',
+            'cheering', 'warbling', 'thundering', 'booming', 'blustering',
+            'humming', 'crying', 'bawling', 'roaring', 'raging', 'chanting',
+            'crooning', 'murmuring', 'bellowing', 'wailing', 'weeping',
+            'screaming', 'yelling', 'yodeling', 'singing', 'honking', 'hooting',
+            'whispering', 'hollering',
+        ]
+
+        device_color = [
+            'pink', 'light-pink', 'hot-pink', 'deep-pink', 'pale-violet-pink',
+            'medium-violet-pink', 'light-salmon', 'salmon', 'dark-salmon',
+            'light-coral', 'indian-red', 'crimson', 'firebrick', 'dark-red',
+            'red', 'orange-red', 'tomato', 'coral', 'dark-orange', 'orange',
+            'yellow', 'light-yellow', 'lemon-chiffon', 'light-goldenrod-yellow',
+            'papaya-whip', 'moccasin', 'peach-puff', 'pale-goldenrod', 'khaki',
+            'dark-khaki', 'gold', 'cornsilk', 'blanched-almond', 'bisque',
+            'navajo-white', 'wheat', 'burlywood', 'tan', 'rosy-brown',
+            'sandy-brown', 'goldenrod', 'dark-goldenrod', 'peru', 'chocolate',
+            'saddle-brown', 'sienna', 'brown', 'maroon', 'dark-olive-green',
+            'olive', 'olive-drab', 'yellow-green', 'lime-green', 'lime',
+            'lawn-green', 'chartreuse', 'green-yellow', 'spring-green',
+            'medium-spring-green', 'light-green', 'pale-green',
+            'dark-sea-green', 'medium-aquamarine', 'medium-sea-green',
+            'sea-green', 'forest-green', 'green', 'dark-green', 'aqua', 'cyan',
+            'light-cyan', 'pale-turquoise', 'aquamarine', 'turquoise',
+            'medium-turquoise', 'dark-turquoise', 'light-sea-green',
+            'cadet-blue', 'dark-cyan', 'teal', 'light-steel-blue',
+            'powder-blue', 'light-blue', 'sky-blue', 'light-sky-blue',
+            'deep-sky-blue', 'dodger-blue', 'cornflower-blue', 'steel-blue',
+            'royal-blue', 'blue', 'medium-blue', 'dark-blue', 'navy',
+            'midnight-blue', 'lavender', 'thristle', 'plum', 'violet', 'orchid',
+            'fuchsia', 'magenta', 'medium-orchid', 'medium-purple',
+            'blue-violet', 'dark-violet', 'dark-orchid', 'dark-magenta',
+            'purple', 'indigo', 'dark-slate-blue', 'slate-blue',
+            'medium-slate-blue', 'white', 'snow', 'honeydew', 'mint-cream',
+            'azure', 'alice-blue', 'ghost-white', 'white-smoke', 'seashell',
+            'beige', 'old-lace', 'floral-white', 'ivory', 'antique-white',
+            'linen', 'lavender-blush', 'misty-rose', 'gainsboro', 'light-gray',
+            'silver', 'dark-gray', 'gray', 'dim-gray', 'light-slate-gray',
+            'slate-gray', 'sark-slate-gray', 'black',
         ]
 
         name = device_names[random.randint(0, len(device_names)-1)]
         attr = device_attr[random.randint(0, len(device_attr)-1)]
-        return '-'.join([attr, name])
+        color = device_color[random.randint(0, len(device_color)-1)]
+        return '-'.join([attr, color, name])
 
     def _generate_unique_name(self) -> None:
         while True:
