@@ -35,6 +35,9 @@ class Device(object):
         for i, r in enumerate(rdescs):
             self.endpoints.append(Endpoint(self, r, i))
 
+        self._action_endpoint: Dict[ActionType, int] = {}
+        self._map_endpoint_actions()
+
         self.report_rate = 100
         self.fw = Firmware(self)
         self.hw: Dict[str, HWComponent] = {}
@@ -75,6 +78,13 @@ class Device(object):
 
         self._actuators = val
 
+    def _map_endpoint_actions(self) -> None:
+        for i, endpoint in enumerate(self.endpoints):
+            for features in endpoint.parsed_rdesc.input_reports.values():
+                for feature in features:
+                    if feature.usage_name in ['X', 'Y']:
+                        self._action_endpoint[ActionType.XY] = i
+
     def destroy(self) -> None:
         for endpoint in self.endpoints:
             endpoint.destroy()
@@ -96,7 +106,7 @@ class Device(object):
 
         return hid_data
 
-    def send_hid_action(self, action: object) -> None:
+    def send_hid_action(self, endpoint_number: int, action: object) -> None:
         '''
         Sends a HID action
 
@@ -104,10 +114,11 @@ class Device(object):
         keyboard, button, etc.) so we send the action to all endpoints. The
         endpoint will only act on the action if it supports it.
 
-        :param action:  HID action
+        :param endpoint_number: Number of the endpoint from where to send the action
+        :param action:          HID action
         '''
-        for endpoint in self.endpoints:
-            endpoint.send(endpoint.create_report(action))
+        endpoint = self.endpoints[endpoint_number]
+        endpoint.send(endpoint.create_report(action))
 
     def _simulate_action_xy(self, action: Dict[str, Any], packets: List[EventData], report_count: int) -> None:
         # FIXME: Read max size from the report descriptor
@@ -180,6 +191,7 @@ class Device(object):
         packets: List[EventData] = []
 
         report_count = int(round(ms2s(action['duration']) * self.report_rate))
+        endpoint = self._action_endpoint[action['type']]
 
         if not report_count:
             report_count = 1
@@ -195,7 +207,8 @@ class Device(object):
         s = sched.scheduler(time.time, time.sleep)
         next_time = 0.0
         for packet in packets:
-            s.enter(next_time, 1, self.send_hid_action,
-                    kwargs={'action': packet})
+            s.enter(next_time, 1, self.send_hid_action, kwargs={
+                        'endpoint_number': endpoint,
+                        'action': packet})
             next_time += 1 / self.report_rate
         s.run()

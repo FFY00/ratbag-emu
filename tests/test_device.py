@@ -84,7 +84,7 @@ class TestDevice(TestDeviceBase):
 
         expected = EventData(x, y)
 
-        device.send_hid_action(expected)
+        device.send_hid_action(endpoint_number=0, action=expected)
         time.sleep(0.1)  # give time for the kernel to proccess all events
 
         assert expected.x <= event_data.x <= expected.x
