@@ -213,7 +213,7 @@ class Device(object):
         if action['type'] == ActionType.XY:
             self._simulate_action_xy(action, endpoint, packets, report_count)
         elif action['type'] == ActionType.BUTTON:
-            self._simulate_action_xy(action, packets, report_count)
+            pass
 
         s = sched.scheduler(time.time, time.sleep)
         next_time = 0.0
