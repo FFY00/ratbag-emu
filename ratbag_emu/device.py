@@ -120,10 +120,18 @@ class Device(object):
         endpoint = self.endpoints[endpoint_number]
         endpoint.send(endpoint.create_report(action))
 
-    def _simulate_action_xy(self, action: Dict[str, Any], packets: List[EventData], report_count: int) -> None:
-        # FIXME: Read max size from the report descriptor
-        axis_max = 127
-        axis_min = -127
+    def _simulate_action_xy(self, action: Dict[str, Any], endpoint_number: int, packets: List[EventData],
+                            report_count: int) -> None:
+        endpoint = self.endpoints[endpoint_number]
+        min = max = {}
+        for features in endpoint.parsed_rdesc.input_reports.values():
+            for feature in features:
+                if feature.usage_name in ['X', 'Y']:
+                    axis = feature.usage_name.lower()
+                    min[axis] = feature.logical_min
+                    max[axis] = feature.logical_max
+
+        assert 'x' in min and 'x' in max and 'y' in min and 'y' in max, 'Endpoint does not support XY movement'
 
         # We assume a linear motion
         dot_buffer = {}
@@ -150,6 +158,7 @@ class Device(object):
         dot_buffer = self.transform_action(action['data'])
 
         for attr in ['x', 'y']:
+            axis_max = max[attr]
             assert dot_buffer[attr] <= axis_max * report_count
             step[attr] = dot_buffer[attr] / report_count
 
@@ -160,6 +169,8 @@ class Device(object):
                 break
 
             for attr in ['x', 'y']:
+                axis_min = min[attr]
+                axis_max = max[attr]
                 dot_buffer[attr] -= step[attr]
                 diff = int(round(real_dot_buffer[attr] - dot_buffer[attr]))
                 '''
@@ -200,7 +211,7 @@ class Device(object):
             packets.append(EventData())
 
         if action['type'] == ActionType.XY:
-            self._simulate_action_xy(action, packets, report_count)
+            self._simulate_action_xy(action, endpoint, packets, report_count)
         elif action['type'] == ActionType.BUTTON:
             self._simulate_action_xy(action, packets, report_count)
 
