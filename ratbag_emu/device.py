@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 
-import copy
 import logging
 import sched
 import time
@@ -11,7 +10,7 @@ from ratbag_emu.actuator import Actuator
 from ratbag_emu.endpoint import Endpoint
 from ratbag_emu.firmware import Firmware
 from ratbag_emu.hw_component import HWComponent
-from ratbag_emu.util import ActionType, EventData, ms2s
+from ratbag_emu.util import EventData, ms2s
 
 
 class Device(object):
@@ -109,63 +108,6 @@ class Device(object):
         for endpoint in self.endpoints:
             endpoint.send(endpoint.create_report(action))
 
-    def _simulate_action_xy(self, action: Dict[str, Any], packets: List[EventData], report_count: int) -> None:
-        # FIXME: Read max size from the report descriptor
-        axis_max = 127
-        axis_min = -127
-
-        # We assume a linear motion
-        dot_buffer = {}
-        step = {}
-
-        '''
-        Initialize dot_buffer, real_dot_buffer and step for X and Y
-
-        dot_buffer holds the ammount of dots left to send (kinda,
-        read below).
-
-        We actually have two variables for this, real_dot_buffer and
-        dot_buffer. dot_buffer mimics the user movement and
-        real_dot_buffer holds true number of dots left to send.
-        When using high report rates (ex. 1000Hz) we usually don't
-        have a full dot to send, that's why we need two variables. We
-        subtract the step to dot_buffer at each iteration, when the
-        difference between dot_buffer and real_dot_buffer is equal
-        or higher than 1 dot we then send a HID report to the device
-        with that difference (int! we send the int part of the
-        difference) and update real_dot_buffer to include this
-        changes.
-        '''
-        dot_buffer = self.transform_action(action['data'])
-
-        for attr in ['x', 'y']:
-            assert dot_buffer[attr] <= axis_max * report_count
-            step[attr] = dot_buffer[attr] / report_count
-
-        real_dot_buffer = copy.deepcopy(dot_buffer)
-
-        for packet in packets:
-            if not real_dot_buffer['x']:
-                break
-
-            for attr in ['x', 'y']:
-                dot_buffer[attr] -= step[attr]
-                diff = int(round(real_dot_buffer[attr] - dot_buffer[attr]))
-                '''
-                The max is 127, if this happens we need to leave the
-                excess in the buffer for it to be sent in the next
-                report
-                '''
-                if abs(diff) >= 1:
-                    if abs(diff) > axis_max:
-                        diff = axis_max if diff > 0 else axis_min
-                    setattr(packet, attr, diff)
-                    real_dot_buffer[attr] -= diff
-
-    def _simulate_action_button(self, action: Dict[str, Any], packets: List[EventData]) -> None:
-        for packet in packets:
-            setattr(packet, 'b{}'.format(action['data']['id']), 1)
-
     def simulate_action(self, action: Dict[str, Any]) -> None:
         '''
         Simulates action
@@ -184,18 +126,20 @@ class Device(object):
         if not report_count:
             report_count = 1
 
-        for i in range(report_count):
-            packets.append(EventData())
+        action_scheduler = sched.scheduler(time.time, time.sleep)
 
-        if action['type'] == ActionType.XY:
-            self._simulate_action_xy(action, packets, report_count)
-        elif action['type'] == ActionType.BUTTON:
-            self._simulate_action_xy(action, packets, report_count)
+        hid_action = self.transform_action(action['data'])
 
-        s = sched.scheduler(time.time, time.sleep)
-        next_time = 0.0
-        for packet in packets:
-            s.enter(next_time, 1, self.send_hid_action,
-                    kwargs={'action': packet})
-            next_time += 1 / self.report_rate
-        s.run()
+        for endpoint in self.endpoints:
+            for i in range(report_count):
+                packets.append(EventData())
+
+            endpoint.populate_hid_data(hid_action, packets)
+
+            next_time = 0.0
+            for packet in packets:
+                action_scheduler.enter(next_time, 1, endpoint.send, kwargs={
+                                       'data': endpoint.create_report(packet)})
+                next_time += 1 / self.report_rate
+
+        action_scheduler.run()

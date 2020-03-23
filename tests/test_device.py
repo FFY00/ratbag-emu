@@ -7,7 +7,7 @@ import pytest
 
 from ratbag_emu import Device
 from ratbag_emu.actuators import SensorActuator
-from ratbag_emu.util import ActionType, EventData
+from ratbag_emu.util import EventData
 
 from tests.base import TestBase
 
@@ -101,7 +101,6 @@ class TestDevice(TestDeviceBase):
         ]
 
         action = {
-            'type': ActionType.XY,
             'duration': 500,
             'data': {
                 'x': 5,
@@ -127,7 +126,6 @@ class TestDevice(TestDeviceBase):
         ]
 
         action = {
-            'type': ActionType.XY,
             'duration': 1,
             'data': {
                 'x': 5,

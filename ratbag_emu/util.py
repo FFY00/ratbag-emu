@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: MIT
 
-from enum import Enum
 from typing import Any, Dict, Union
 
 
@@ -26,11 +25,5 @@ class EventData(object):
 
     @staticmethod
     def from_action(dpi: int, action: Dict[str, Any]) -> 'EventData':
-        assert action['type'] == ActionType.XY
         return EventData(x=int(round(mm2inch(action['data']['x']) * dpi)),
                          y=int(round(mm2inch(action['data']['y']) * dpi)))
-
-
-class ActionType(Enum):
-    XY = 1
-    BUTTON = 2
