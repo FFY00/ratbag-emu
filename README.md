@@ -21,3 +21,14 @@ Dependencies:
 
 Dependencies for running the tests:
   - pytest
+
+
+### Development
+
+If you want to develop for this project you might want to setup a pre-commit
+hook to run static analysis. This catches issues before triggering the CI and
+pinging anyone.
+
+```
+ln -sf git-hooks/pre-commit .git/hooks/pre-commit
+```

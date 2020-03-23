@@ -1,0 +1,3 @@
+#!/bin/sh
+
+mypy --ignore-missing-imports --strict "$GIT_DIR"/../ratbag_emu
