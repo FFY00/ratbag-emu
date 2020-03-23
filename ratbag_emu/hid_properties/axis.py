@@ -8,9 +8,9 @@ from typing import Any, Dict, List
 from ratbag_emu.hid_property import HIDProperty
 from ratbag_emu.util import EventData
 
-if typing.TYPE_CHECKING:
-    from ratbag_emu.actuator import Actuator  # pragma: no cover # noqa: F401
-    from ratbag_emu.endpoint import Endpoint  # pragma: no cover
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from ratbag_emu.actuator import Actuator  # noqa: F401
+    from ratbag_emu.endpoint import Endpoint
 
 
 class AxisProperty(HIDProperty):

@@ -12,10 +12,10 @@ from typing import Any, List, Dict, Optional
 from ratbag_emu.hid_properties.axis import AxisProperty
 from ratbag_emu.util import EventData
 
-if typing.TYPE_CHECKING:
-    from ratbag_emu.actuator import Actuator  # pragma: no cover # noqa: F401
-    from ratbag_emu.device import Device  # pragma: no cover
-    from ratbag_emu.hid_property import HIDProperty  # pragma: no cover
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from ratbag_emu.actuator import Actuator  # noqa: F401
+    from ratbag_emu.device import Device
+    from ratbag_emu.hid_property import HIDProperty
 
 
 class Endpoint(hidtools.uhid.UHIDDevice):  # type: ignore

@@ -8,8 +8,8 @@ from typing import Any, Dict, List
 
 from ratbag_emu.util import EventData
 
-if typing.TYPE_CHECKING:
-    from ratbag_emu.endpoint import Endpoint  # pragma: no cover
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from ratbag_emu.endpoint import Endpoint
 
 
 class HIDProperty(ABC):

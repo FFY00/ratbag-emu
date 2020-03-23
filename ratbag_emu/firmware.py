@@ -5,8 +5,8 @@ import typing
 
 from typing import List
 
-if typing.TYPE_CHECKING:
-    from ratbag_emu.device import Device  # pragma: no cover
+if typing.TYPE_CHECKING:  # pragma: no cover
+    from ratbag_emu.device import Device
 
 
 class Firmware(object):
