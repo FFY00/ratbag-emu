@@ -7,10 +7,15 @@ import typing
 
 import hidtools.uhid
 
-from typing import List, Optional
+from typing import Any, List, Dict, Optional
+
+from ratbag_emu.hid_properties.axis import AxisProperty
+from ratbag_emu.util import EventData
 
 if typing.TYPE_CHECKING:
+    from ratbag_emu.actuator import Actuator  # pragma: no cover # noqa: F401
     from ratbag_emu.device import Device  # pragma: no cover
+    from ratbag_emu.hid_property import HIDProperty  # pragma: no cover
 
 
 class Endpoint(hidtools.uhid.UHIDDevice):  # type: ignore
@@ -37,6 +42,9 @@ class Endpoint(hidtools.uhid.UHIDDevice):  # type: ignore
         self.number = number
         self.name = f'ratbag-emu {owner.name} ({self.vid:04x}:{self.pid:04x}, {self.number})'
 
+        self._hid_properties: List[HIDProperty] = []
+        self._update_hid_properties()
+
         self._output_report = self._receive
 
         self.create_kernel_device()
@@ -50,6 +58,13 @@ class Endpoint(hidtools.uhid.UHIDDevice):  # type: ignore
     @property
     def uhid_dev_is_ready(self) -> bool:
         return self.udev_device is not None
+
+    def _update_hid_properties(self) -> None:
+        for features in self.parsed_rdesc.input_reports.values():
+            for feature in features:
+                if feature.usage_name in ['X', 'Y']:
+                    self._hid_properties.append(AxisProperty(self, feature.usage_name.lower(),
+                                                             feature.logical_min, feature.logical_max))
 
     def _receive(self, data: List[int], size: int, rtype: int) -> None:
         '''
@@ -106,3 +121,10 @@ class Endpoint(hidtools.uhid.UHIDDevice):  # type: ignore
             return []
 
         return super().create_report(action, global_data)  # type: ignore
+
+    def populate_hid_data(self, action: Dict[str, Any], packets: List[EventData]) -> None:
+        '''
+        Transforms high-level actions to HID data
+        '''
+        for prop in self._hid_properties:
+            prop.populate(action, packets)
