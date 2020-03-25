@@ -1,3 +1,4 @@
+# Architecture overview (class diagram)
 ```mermaid
 classDiagram
 
@@ -60,4 +61,35 @@ class HIDProperty {
     +populate(action) %% Transform a high-level action ()
 }
 HIDProperty --o Endpoint : used (_hid_properties)
+```
+
+# `simulate_action()`
+```mermaid
+sequenceDiagram
+
+participant API User
+participant Device
+participant Actuator
+participant Endpoint
+participant HIDProperty
+
+API User->>Device: simulate_action(action)
+
+Device->>+Device: hid_action = transform_action(action)
+loop actuators
+	Device-->>Actuator: transform(data)
+end
+Device-->>-Device: return
+
+Device->>+Endpoint: populate_hid_data(hid_action, packets)
+loop HID properties
+    Endpoint-->>HIDProperty: populate(hid_action, packets)
+end
+Endpoint-->>-Device: return
+
+loop packets
+    Device->>Endpoint: send(create_report(packet))
+end
+
+Device-->>API User: return
 ```
