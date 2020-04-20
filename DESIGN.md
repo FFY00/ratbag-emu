@@ -77,7 +77,7 @@ API User->>Device: simulate_action(action)
 
 Device->>+Device: hid_action = transform_action(action)
 loop actuators
-	Device-->>Actuator: transform(data)
+    Device-->>Actuator: transform(data)
 end
 Device-->>-Device: return
 
@@ -92,4 +92,73 @@ loop packets
 end
 
 Device-->>API User: return
+```
+
+### Example state diagram
+```mermaid
+stateDiagram
+
+[*] --> Device : action
+
+state Device {
+    state fork_state <<fork>>
+
+    transform : transform
+    transform : dpi = 500
+    transform : btn5 = KEY_LEFTSHIFT + KEY_B
+
+    [*] --> transform : event
+
+    transform --> fork_state : event
+
+    fork_state --> Endpoint1
+    fork_state --> Endpoint2
+    fork_state --> Endpoint3
+
+    state Endpoint1 {
+        populate : populate
+        populate : X logical_min = 0
+        populate : X logical_max = 64
+        populate : Y logical_min = 0
+        populate : Y logical_max = 64
+        populate : buttons[0 .. 16]
+
+        device --> report_rate
+        report_rate --> populate
+
+        rdesc --> populate
+
+        [*] --> populate : event
+        populate --> [*] : array of timed packets (HID data -- bytes)
+    }
+
+    state Endpoint2 {
+        populate : populate
+        populate : X logical_min = 65
+        populate : X logical_max = 1024
+        populate : Y logical_min = 65
+        populate : Y logical_max = 1024
+
+        device --> report_rate
+        report_rate --> populate
+
+        rdesc --> populate
+
+        [*] --> populate : event
+        populate --> [*] : array of timed packets (HID data -- bytes)
+    }
+
+    state Endpoint3 {
+        populate : populate
+        populate : keyboard
+
+        device --> report_rate
+        report_rate --> populate
+
+        rdesc --> populate
+
+        [*] --> populate : event
+        populate --> [*] : array of timed packets (HID data -- bytes)
+    }
+}
 ```
